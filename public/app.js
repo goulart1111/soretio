@@ -11,6 +11,7 @@ const els = {
   giveawayTitle: document.querySelector('#giveaway-title'),
   giveawayPrize: document.querySelector('#giveaway-prize'),
   notice: document.querySelector('#notice'),
+  joinedMessage: document.querySelector('#joined-message'),
   loginButton: document.querySelector('#login-button'),
   joinButton: document.querySelector('#join-button'),
   logoutButton: document.querySelector('#logout-button'),
@@ -90,9 +91,11 @@ function render() {
   renderGiveaway();
 
   const logged = Boolean(state.user);
+  const joined = Boolean(state.giveaway?.joined || (state.giveaway && localStorage.getItem('sorteio_pix_joined') === state.giveaway.id));
   els.loginButton.hidden = logged;
   els.logoutButton.hidden = !logged;
-  els.joinButton.hidden = !logged || !state.giveaway || state.giveaway.joined || state.giveaway.status !== 'open';
+  els.joinButton.hidden = !logged || !state.giveaway || joined || state.giveaway.status !== 'open';
+  els.joinedMessage.hidden = !logged || !joined;
 }
 
 function renderUser() {

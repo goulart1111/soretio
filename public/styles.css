@@ -186,6 +186,18 @@ strong {
   color: var(--accent);
 }
 
+.joined-message {
+  flex-basis: 100%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(38, 208, 124, 0.34);
+  border-radius: 8px;
+  background: rgba(24, 185, 106, 0.12);
+  color: #d9ffe9;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .actions,
 .admin-controls {
   display: flex;
