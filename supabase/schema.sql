@@ -50,6 +50,15 @@ alter table public.giveaways
 create index if not exists giveaway_participants_giveaway_idx
   on public.giveaway_participants(giveaway_id, created_at);
 
+create table if not exists public.rate_limits (
+  key text primary key,
+  count integer not null default 1,
+  window_start timestamptz not null default now()
+);
+
+create index if not exists rate_limits_window_start_idx
+  on public.rate_limits(window_start);
+
 insert into public.giveaways (title, pix_prize, status)
 select 'Sorteio PIX', 'PIX especial', 'open'
 where not exists (select 1 from public.giveaways);
