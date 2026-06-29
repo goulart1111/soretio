@@ -489,7 +489,8 @@ function redirect(res, location) {
 }
 
 function serveStatic(req, res, pathname) {
-  const filePath = normalize(join(publicDir, pathname === '/' ? 'index.html' : pathname));
+  const staticPath = pathname === '/goulindo2026soretio' ? 'admin.html' : pathname === '/' ? 'index.html' : pathname;
+  const filePath = normalize(join(publicDir, staticPath));
   const insidePublicDir = filePath === publicDir || filePath.startsWith(`${publicDir}${sep}`);
   if (!insidePublicDir || !existsSync(filePath)) {
     res.writeHead(404, securityHeaders({ 'content-type': 'text/plain; charset=utf-8' }));

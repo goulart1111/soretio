@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Sorteio PIX</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell admin-shell">
+      <section class="action-band admin-page">
+        <div>
+          <p class="eyebrow">Area privada</p>
+          <h1 class="admin-title">Admin do Sorteio</h1>
+          <p class="subtitle">Use essa rota somente quando quiser sortear o ganhador do PIX.</p>
+          <p class="notice" id="admin-status">Carregando dados do sorteio...</p>
+        </div>
+        <div class="admin-summary">
+          <div>
+            <span class="muted">Participantes</span>
+            <strong id="admin-participant-count">0</strong>
+          </div>
+          <div>
+            <span class="muted">Status</span>
+            <strong id="admin-giveaway-status">Carregando</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="action-band">
+        <div>
+          <h2 id="admin-giveaway-title">Sorteio PIX</h2>
+          <p id="admin-giveaway-prize">Premio em PIX</p>
+          <p class="notice" id="admin-result">Clique no botao apenas quando for fazer o sorteio.</p>
+        </div>
+        <div class="actions">
+          <button class="button primary draw-button" id="draw-button" type="button">Sortear ganhador</button>
+          <a class="button ghost" href="/">Voltar</a>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="password-dialog" id="draw-dialog">
+      <form method="dialog" class="dialog-panel">
+        <h2>Senha do sorteio</h2>
+        <p class="notice">Digite a senha admin para confirmar o sorteio.</p>
+        <input id="admin-token" type="password" autocomplete="off" placeholder="Senha do sorteio" />
+        <div class="actions">
+          <button class="button ghost" value="cancel" type="submit">Cancelar</button>
+          <button class="button primary" id="confirm-draw-button" value="confirm" type="submit">Confirmar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/admin.js" type="module"></script>
+  </body>
+</html>

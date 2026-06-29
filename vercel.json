@@ -29,6 +29,10 @@
       "dest": "/public/$1"
     },
     {
+      "src": "/goulindo2026soretio/?",
+      "dest": "/public/admin.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/index.html"
     }

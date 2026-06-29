@@ -14,16 +14,12 @@ const els = {
   loginButton: document.querySelector('#login-button'),
   joinButton: document.querySelector('#join-button'),
   logoutButton: document.querySelector('#logout-button'),
-  adminToken: document.querySelector('#admin-token'),
-  drawButton: document.querySelector('#draw-button'),
-  adminResult: document.querySelector('#admin-result')
 };
 
 boot();
 
 els.joinButton.addEventListener('click', joinGiveaway);
 els.logoutButton.addEventListener('click', logout);
-els.drawButton.addEventListener('click', drawWinner);
 
 async function boot() {
   ensureBrowserId();
@@ -87,30 +83,6 @@ async function logout() {
   await fetch('/api/logout', { method: 'POST' });
   state.user = null;
   render();
-}
-
-async function drawWinner() {
-  const token = els.adminToken.value.trim();
-  if (!token) {
-    setAdminResult('Informe o token admin.', 'error');
-    return;
-  }
-
-  setBusy(els.drawButton, true);
-  const response = await fetch('/api/admin/draw', {
-    method: 'POST',
-    headers: { authorization: `Bearer ${token}` }
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    setAdminResult(data.error || 'Falha ao sortear.', 'error');
-  } else {
-    setAdminResult(`Ganhador: ${data.winner.username} (${data.winner.discordId})`, 'success');
-    await loadGiveaway();
-    render();
-  }
-  setBusy(els.drawButton, false);
 }
 
 function render() {
@@ -181,11 +153,6 @@ function statusLabel(status) {
 function showNotice(message, type = '') {
   els.notice.textContent = message;
   els.notice.className = `notice ${type}`.trim();
-}
-
-function setAdminResult(message, type = '') {
-  els.adminResult.textContent = message;
-  els.adminResult.className = `notice ${type}`.trim();
 }
 
 function setBusy(button, busy) {
