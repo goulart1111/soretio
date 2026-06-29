@@ -27,26 +27,33 @@ els.drawButton.addEventListener('click', drawWinner);
 
 async function boot() {
   ensureBrowserId();
-  await Promise.all([loadMe(), loadGiveaway()]);
+  await Promise.allSettled([loadMe(), loadGiveaway()]);
   render();
 }
 
 async function loadMe() {
-  const response = await fetch('/api/me');
-  if (response.ok) {
+  try {
+    const response = await fetch('/api/me');
+    if (!response.ok) return;
     const data = await response.json();
     state.user = data.user;
+  } catch {
+    state.user = null;
   }
 }
 
 async function loadGiveaway() {
-  const response = await fetch('/api/giveaway');
-  const data = await response.json();
-  if (!response.ok) {
-    showNotice(data.error || 'Nao foi possivel carregar o sorteio.', 'error');
-    return;
+  try {
+    const response = await fetch('/api/giveaway');
+    const data = await response.json();
+    if (!response.ok) {
+      showNotice(data.error || 'Nao foi possivel carregar o sorteio.', 'error');
+      return;
+    }
+    state.giveaway = data.giveaway;
+  } catch {
+    showNotice('Site aberto. A API ainda nao respondeu; confira as variaveis e o banco depois.', 'error');
   }
-  state.giveaway = data.giveaway;
 }
 
 async function joinGiveaway() {
@@ -113,7 +120,7 @@ function render() {
   const logged = Boolean(state.user);
   els.loginButton.hidden = logged;
   els.logoutButton.hidden = !logged;
-  els.joinButton.hidden = !logged || state.giveaway?.joined || state.giveaway?.status !== 'open';
+  els.joinButton.hidden = !logged || !state.giveaway || state.giveaway.joined || state.giveaway.status !== 'open';
 }
 
 function renderUser() {
