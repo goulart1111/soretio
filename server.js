@@ -71,6 +71,10 @@ export async function handleRequest(req, res) {
       return apiAdminParticipants(req, res);
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/admin/reset') {
+      return apiAdminReset(req, res);
+    }
+
     if (req.method === 'GET') {
       return serveStatic(req, res, url.pathname);
     }
@@ -325,6 +329,40 @@ async function apiAdminParticipants(req, res) {
       joinedAt: participant.created_at
     }))
   });
+}
+
+async function apiAdminReset(req, res) {
+  if (!isAdminRequest(req)) {
+    return sendJson(res, 403, { error: 'Token admin invalido.' });
+  }
+
+  const giveaway = await getOpenOrLatestGiveaway();
+  if (!giveaway) return sendJson(res, 404, { error: 'Nenhum sorteio cadastrado.' });
+
+  const clearWinner = await supabase(`/rest/v1/giveaways?id=eq.${encodeURIComponent(giveaway.id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      status: 'open',
+      winner_participant_id: null,
+      drawn_at: null
+    })
+  });
+
+  if (!clearWinner.ok) {
+    console.error(clearWinner.text);
+    return sendJson(res, 500, { error: 'Falha ao limpar o ganhador.' });
+  }
+
+  const deleteParticipants = await supabase(`/rest/v1/giveaway_participants?giveaway_id=eq.${encodeURIComponent(giveaway.id)}`, {
+    method: 'DELETE'
+  });
+
+  if (!deleteParticipants.ok) {
+    console.error(deleteParticipants.text);
+    return sendJson(res, 500, { error: 'Falha ao limpar participantes.' });
+  }
+
+  sendJson(res, 200, { ok: true });
 }
 
 function isAdminRequest(req) {

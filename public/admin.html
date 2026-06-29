@@ -35,6 +35,7 @@
         </div>
         <div class="actions">
           <button class="button primary draw-button" id="draw-button" type="button">Sortear ganhador</button>
+          <button class="button danger-button" id="reset-button" type="button">Limpar sorteio</button>
           <a class="button ghost" href="/">Voltar</a>
         </div>
       </section>
@@ -60,6 +61,18 @@
         <div class="actions">
           <button class="button ghost" value="cancel" type="submit">Cancelar</button>
           <button class="button primary" id="confirm-draw-button" value="confirm" type="submit">Confirmar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="password-dialog" id="reset-dialog">
+      <form method="dialog" class="dialog-panel">
+        <h2>Limpar sorteio</h2>
+        <p class="notice error">Isso apaga todos os participantes e limpa o ganhador atual.</p>
+        <input id="reset-token" type="password" autocomplete="off" placeholder="Senha admin" />
+        <div class="actions">
+          <button class="button ghost" value="cancel" type="submit">Cancelar</button>
+          <button class="button danger-button" id="confirm-reset-button" value="confirm" type="submit">Limpar tudo</button>
         </div>
       </form>
     </dialog>

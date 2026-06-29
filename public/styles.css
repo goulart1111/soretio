@@ -298,6 +298,11 @@ input {
   background: var(--accent-strong);
 }
 
+.danger-button {
+  border-color: transparent;
+  background: #cf3030;
+}
+
 .password-dialog {
   width: min(420px, calc(100% - 28px));
   border: 1px solid rgba(255, 255, 255, 0.16);

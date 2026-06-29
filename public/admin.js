@@ -6,9 +6,13 @@ const els = {
   giveawayStatus: document.querySelector('#admin-giveaway-status'),
   result: document.querySelector('#admin-result'),
   drawButton: document.querySelector('#draw-button'),
+  resetButton: document.querySelector('#reset-button'),
   dialog: document.querySelector('#draw-dialog'),
+  resetDialog: document.querySelector('#reset-dialog'),
   token: document.querySelector('#admin-token'),
+  resetToken: document.querySelector('#reset-token'),
   confirmButton: document.querySelector('#confirm-draw-button'),
+  confirmResetButton: document.querySelector('#confirm-reset-button'),
   participantToken: document.querySelector('#participant-token'),
   loadParticipantsButton: document.querySelector('#load-participants-button'),
   participantListStatus: document.querySelector('#participant-list-status'),
@@ -27,6 +31,16 @@ els.drawButton.addEventListener('click', () => {
 
 els.dialog.addEventListener('close', () => {
   if (els.dialog.returnValue === 'confirm') drawWinner();
+});
+
+els.resetButton.addEventListener('click', () => {
+  els.resetToken.value = '';
+  els.resetDialog.showModal();
+  els.resetToken.focus();
+});
+
+els.resetDialog.addEventListener('close', () => {
+  if (els.resetDialog.returnValue === 'confirm') resetGiveaway();
 });
 
 els.loadParticipantsButton.addEventListener('click', loadParticipants);
@@ -70,6 +84,35 @@ async function drawWinner() {
     setResult(data.error || 'Falha ao sortear.', 'error');
   } else {
     setResult(`Ganhador: ${data.winner.username} (${data.winner.discordId})`, 'success');
+    await loadGiveaway();
+    render();
+  }
+  setBusy(false);
+}
+
+async function resetGiveaway() {
+  const token = els.resetToken.value.trim();
+  if (!token) {
+    setResult('Senha admin obrigatoria para limpar o sorteio.', 'error');
+    return;
+  }
+
+  setBusy(true);
+  setResult('Limpando participantes e ganhador...');
+
+  const response = await fetch('/api/admin/reset', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` }
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    setResult(data.error || 'Falha ao limpar sorteio.', 'error');
+  } else {
+    giveaway = null;
+    els.participantList.innerHTML = '';
+    setParticipantStatus('Lista limpa. Carregue novamente quando tiver novos participantes.');
+    setResult('Sorteio limpo. Participantes apagados e ganhador removido.', 'success');
     await loadGiveaway();
     render();
   }
@@ -171,5 +214,7 @@ function formatDate(value) {
 
 function setBusy(busy) {
   els.drawButton.disabled = busy;
+  els.resetButton.disabled = busy;
   els.confirmButton.disabled = busy;
+  els.confirmResetButton.disabled = busy;
 }
