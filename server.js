@@ -226,7 +226,6 @@ async function apiGiveaway(req, res) {
 
   sendJson(res, 200, {
     giveaway: {
-      id: giveaway.id,
       title: giveaway.title,
       pixPrize: giveaway.pix_prize,
       status: giveaway.status,

@@ -73,7 +73,6 @@ async function joinGiveaway() {
     return;
   }
 
-  localStorage.setItem('sorteio_pix_joined', state.giveaway.id);
   showNotice('Participacao confirmada. Boa sorte!', 'success');
   await loadGiveaway();
   render();
@@ -91,7 +90,7 @@ function render() {
   renderGiveaway();
 
   const logged = Boolean(state.user);
-  const joined = Boolean(state.giveaway?.joined || (state.giveaway && localStorage.getItem('sorteio_pix_joined') === state.giveaway.id));
+  const joined = Boolean(state.giveaway?.joined);
   els.loginButton.hidden = logged;
   els.logoutButton.hidden = !logged;
   els.joinButton.hidden = !logged || !state.giveaway || joined || state.giveaway.status !== 'open';
@@ -137,7 +136,7 @@ function renderGiveaway() {
     return;
   }
 
-  if (state.giveaway.joined || localStorage.getItem('sorteio_pix_joined') === state.giveaway.id) {
+  if (state.giveaway.joined) {
     showNotice('Voce ja esta participando deste sorteio.', 'success');
     return;
   }
