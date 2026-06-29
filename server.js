@@ -67,6 +67,10 @@ export async function handleRequest(req, res) {
       return apiDraw(req, res);
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/admin/participants') {
+      return apiAdminParticipants(req, res);
+    }
+
     if (req.method === 'GET') {
       return serveStatic(req, res, url.pathname);
     }
@@ -267,8 +271,7 @@ async function apiJoin(req, res) {
 }
 
 async function apiDraw(req, res) {
-  const auth = String(req.headers.authorization || '');
-  if (auth !== `Bearer ${ADMIN_TOKEN}`) {
+  if (!isAdminRequest(req)) {
     return sendJson(res, 403, { error: 'Token admin invalido.' });
   }
 
@@ -303,6 +306,29 @@ async function apiDraw(req, res) {
       participantId: winner.id
     }
   });
+}
+
+async function apiAdminParticipants(req, res) {
+  if (!isAdminRequest(req)) {
+    return sendJson(res, 403, { error: 'Token admin invalido.' });
+  }
+
+  const giveaway = await getOpenOrLatestGiveaway();
+  if (!giveaway) return sendJson(res, 404, { error: 'Nenhum sorteio cadastrado.' });
+
+  const participants = await listParticipants(giveaway.id);
+  sendJson(res, 200, {
+    participants: participants.map((participant) => ({
+      id: participant.id,
+      username: participant.username,
+      discordId: participant.discord_id,
+      joinedAt: participant.created_at
+    }))
+  });
+}
+
+function isAdminRequest(req) {
+  return String(req.headers.authorization || '') === `Bearer ${ADMIN_TOKEN}`;
 }
 
 async function upsertUser(discordUser) {

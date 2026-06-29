@@ -326,6 +326,37 @@ input {
   margin-top: 18px;
 }
 
+.participant-section {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.participant-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.participant-list {
+  display: grid;
+  gap: 10px;
+}
+
+.participant-item,
+.empty-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(35, 40, 50, 0.72);
+  padding: 14px 16px;
+}
+
+.participant-item span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 780px) {
   .app-shell {
     width: min(100% - 24px, 1120px);
@@ -348,6 +379,10 @@ input {
 
   .actions {
     justify-content: stretch;
+  }
+
+  .participant-tools {
+    flex-direction: column;
   }
 
   .button {
