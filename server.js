@@ -5,14 +5,14 @@ import { createServer } from 'node:http';
 import { URL } from 'node:url';
 
 const PORT = Number(process.env.PORT || 3000);
-const PUBLIC_SITE_URL = requireEnv('PUBLIC_SITE_URL');
-const DISCORD_CLIENT_ID = requireEnv('DISCORD_CLIENT_ID');
-const DISCORD_CLIENT_SECRET = requireEnv('DISCORD_CLIENT_SECRET');
-const DISCORD_REDIRECT_URI = requireEnv('DISCORD_REDIRECT_URI');
-const SUPABASE_URL = requireEnv('SUPABASE_URL').replace(/\/$/, '');
-const SUPABASE_SERVICE_ROLE_KEY = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
-const SESSION_SECRET = requireEnv('SESSION_SECRET');
-const ADMIN_TOKEN = requireEnv('ADMIN_TOKEN');
+const PUBLIC_SITE_URL = process.env.PUBLIC_SITE_URL || `http://localhost:${PORT}`;
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || '';
+const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || '';
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SESSION_SECRET = process.env.SESSION_SECRET || '';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 
 const publicDir = join(process.cwd(), 'public');
 const mimeTypes = {
@@ -28,6 +28,16 @@ const mimeTypes = {
 export async function handleRequest(req, res) {
   try {
     const url = new URL(req.url, PUBLIC_SITE_URL);
+
+    if (isBackendRoute(url.pathname)) {
+      const missing = missingEnvVars();
+      if (missing.length) {
+        return sendJson(res, 500, {
+          error: 'Variaveis de ambiente ausentes na Vercel.',
+          missing
+        });
+      }
+    }
 
     if (req.method === 'GET' && url.pathname === '/auth/discord') {
       return startDiscordLogin(req, res);
@@ -77,10 +87,26 @@ if (!process.env.VERCEL) {
 function requireEnv(name) {
   const value = process.env[name];
   if (!value) {
-    console.error(`Variavel de ambiente ausente: ${name}`);
-    process.exit(1);
+    throw new Error(`Variavel de ambiente ausente: ${name}`);
   }
   return value;
+}
+
+function isBackendRoute(pathname) {
+  return pathname.startsWith('/api/') || pathname.startsWith('/auth/');
+}
+
+function missingEnvVars() {
+  return [
+    'PUBLIC_SITE_URL',
+    'DISCORD_CLIENT_ID',
+    'DISCORD_CLIENT_SECRET',
+    'DISCORD_REDIRECT_URI',
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'SESSION_SECRET',
+    'ADMIN_TOKEN'
+  ].filter((name) => !process.env[name]);
 }
 
 function startDiscordLogin(req, res) {
