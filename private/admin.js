@@ -7,13 +7,13 @@ const els = {
   result: document.querySelector('#admin-result'),
   drawButton: document.querySelector('#draw-button'),
   resetButton: document.querySelector('#reset-button'),
+  logoutButton: document.querySelector('#admin-logout-button'),
   dialog: document.querySelector('#draw-dialog'),
   resetDialog: document.querySelector('#reset-dialog'),
   token: document.querySelector('#admin-token'),
   resetToken: document.querySelector('#reset-token'),
   confirmButton: document.querySelector('#confirm-draw-button'),
   confirmResetButton: document.querySelector('#confirm-reset-button'),
-  participantToken: document.querySelector('#participant-token'),
   loadParticipantsButton: document.querySelector('#load-participants-button'),
   participantListStatus: document.querySelector('#participant-list-status'),
   participantList: document.querySelector('#participant-list')
@@ -44,6 +44,7 @@ els.resetDialog.addEventListener('close', () => {
 });
 
 els.loadParticipantsButton.addEventListener('click', loadParticipants);
+els.logoutButton.addEventListener('click', logoutAdmin);
 
 async function boot() {
   await loadGiveaway();
@@ -65,8 +66,8 @@ async function loadGiveaway() {
 }
 
 async function drawWinner() {
-  const token = els.token.value.trim();
-  if (!token) {
+  const password = els.token.value.trim();
+  if (!password) {
     setResult('Senha do sorteio obrigatoria.', 'error');
     return;
   }
@@ -76,7 +77,8 @@ async function drawWinner() {
 
   const response = await fetch('/api/admin/draw', {
     method: 'POST',
-    headers: { authorization: `Bearer ${token}` }
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ password })
   });
 
   const data = await response.json();
@@ -91,8 +93,8 @@ async function drawWinner() {
 }
 
 async function resetGiveaway() {
-  const token = els.resetToken.value.trim();
-  if (!token) {
+  const password = els.resetToken.value.trim();
+  if (!password) {
     setResult('Senha admin obrigatoria para limpar o sorteio.', 'error');
     return;
   }
@@ -102,7 +104,8 @@ async function resetGiveaway() {
 
   const response = await fetch('/api/admin/reset', {
     method: 'POST',
-    headers: { authorization: `Bearer ${token}` }
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ password })
   });
   const data = await response.json();
 
@@ -120,20 +123,12 @@ async function resetGiveaway() {
 }
 
 async function loadParticipants() {
-  const token = els.participantToken.value.trim();
-  if (!token) {
-    setParticipantStatus('Informe a senha admin para ver os participantes.', 'error');
-    return;
-  }
-
   els.loadParticipantsButton.disabled = true;
   setParticipantStatus('Carregando participantes...');
   els.participantList.innerHTML = '';
 
   try {
-    const response = await fetch('/api/admin/participants', {
-      headers: { authorization: `Bearer ${token}` }
-    });
+    const response = await fetch('/api/admin/participants');
     const data = await response.json();
 
     if (!response.ok) {
@@ -148,6 +143,11 @@ async function loadParticipants() {
   } finally {
     els.loadParticipantsButton.disabled = false;
   }
+}
+
+async function logoutAdmin() {
+  await fetch('/goulindo2026soretio/logout', { method: 'POST' });
+  window.location.href = '/goulindo2026soretio';
 }
 
 function render() {

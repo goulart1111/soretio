@@ -15,6 +15,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || '';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 
 const publicDir = join(process.cwd(), 'public');
+const privateDir = join(process.cwd(), 'private');
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -45,6 +46,22 @@ export async function handleRequest(req, res) {
 
     if (req.method === 'GET' && url.pathname === '/auth/discord/callback') {
       return finishDiscordLogin(req, res, url);
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/goulindo2026soretio' || url.pathname === '/goulindo2026soretio/')) {
+      return serveAdminPage(req, res);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/goulindo2026soretio/login') {
+      return adminLogin(req, res);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/goulindo2026soretio/logout') {
+      return adminLogout(req, res);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/goulindo2026soretio/admin.js') {
+      return serveProtectedAdminAsset(req, res, 'admin.js');
     }
 
     if (req.method === 'POST' && url.pathname === '/api/logout') {
@@ -101,7 +118,7 @@ function requireEnv(name) {
 }
 
 function isBackendRoute(pathname) {
-  return pathname.startsWith('/api/') || pathname.startsWith('/auth/');
+  return pathname.startsWith('/api/') || pathname.startsWith('/auth/') || pathname.startsWith('/goulindo2026soretio');
 }
 
 function missingEnvVars() {
@@ -275,7 +292,7 @@ async function apiJoin(req, res) {
 }
 
 async function apiDraw(req, res) {
-  if (!isAdminRequest(req)) {
+  if (!isAdminSession(req) || !(await hasAdminActionPassword(req))) {
     return sendJson(res, 403, { error: 'Token admin invalido.' });
   }
 
@@ -313,7 +330,7 @@ async function apiDraw(req, res) {
 }
 
 async function apiAdminParticipants(req, res) {
-  if (!isAdminRequest(req)) {
+  if (!isAdminSession(req)) {
     return sendJson(res, 403, { error: 'Token admin invalido.' });
   }
 
@@ -332,7 +349,7 @@ async function apiAdminParticipants(req, res) {
 }
 
 async function apiAdminReset(req, res) {
-  if (!isAdminRequest(req)) {
+  if (!isAdminSession(req) || !(await hasAdminActionPassword(req))) {
     return sendJson(res, 403, { error: 'Token admin invalido.' });
   }
 
@@ -365,8 +382,41 @@ async function apiAdminReset(req, res) {
   sendJson(res, 200, { ok: true });
 }
 
-function isAdminRequest(req) {
-  return String(req.headers.authorization || '') === `Bearer ${ADMIN_TOKEN}`;
+async function adminLogin(req, res) {
+  const body = await readBody(req);
+  const password = body.get('password') || '';
+
+  if (!isSameSecret(password, ADMIN_TOKEN)) {
+    return sendHtml(res, 403, adminLoginHtml('Senha admin incorreta.'));
+  }
+
+  setCookie(res, 'admin_session', signJson({ admin: true, expiresAt: Date.now() + 2 * 60 * 60 * 1000 }), {
+    maxAge: 2 * 60 * 60,
+    httpOnly: true,
+    sameSite: 'Strict'
+  });
+  redirect(res, '/goulindo2026soretio');
+}
+
+async function adminLogout(req, res) {
+  clearCookie(res, 'admin_session');
+  sendJson(res, 200, { ok: true });
+}
+
+function isAdminSession(req) {
+  const session = verifyJson(parseCookies(req).admin_session);
+  return Boolean(session?.admin && session.expiresAt > Date.now());
+}
+
+async function hasAdminActionPassword(req) {
+  const body = await readJson(req);
+  return isSameSecret(String(body.password || ''), ADMIN_TOKEN);
+}
+
+function isSameSecret(value, expected) {
+  const a = Buffer.from(String(value));
+  const b = Buffer.from(String(expected));
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 async function upsertUser(discordUser) {
@@ -506,10 +556,20 @@ function cleanToken(value) {
 }
 
 async function readJson(req) {
+  const raw = await readRawBody(req);
+  if (!raw) return {};
+  return JSON.parse(raw);
+}
+
+async function readBody(req) {
+  const raw = await readRawBody(req);
+  return new URLSearchParams(raw);
+}
+
+async function readRawBody(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
-  if (!chunks.length) return {};
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  return chunks.length ? Buffer.concat(chunks).toString('utf8') : '';
 }
 
 function parseCookies(req) {
@@ -553,7 +613,7 @@ function redirect(res, location) {
 }
 
 function serveStatic(req, res, pathname) {
-  const staticPath = pathname === '/goulindo2026soretio' ? 'admin.html' : pathname === '/' ? 'index.html' : pathname;
+  const staticPath = pathname === '/' ? 'index.html' : pathname;
   const filePath = normalize(join(publicDir, staticPath));
   const insidePublicDir = filePath === publicDir || filePath.startsWith(`${publicDir}${sep}`);
   if (!insidePublicDir || !existsSync(filePath)) {
@@ -566,12 +626,97 @@ function serveStatic(req, res, pathname) {
   createReadStream(filePath).pipe(res);
 }
 
+function serveAdminPage(req, res) {
+  if (!isAdminSession(req)) {
+    return sendHtml(res, 200, adminLoginHtml());
+  }
+  return servePrivateFile(res, 'admin.html');
+}
+
+function serveProtectedAdminAsset(req, res, filename) {
+  if (!isAdminSession(req)) {
+    return sendJson(res, 403, { error: 'Area admin protegida.' });
+  }
+  return servePrivateFile(res, filename);
+}
+
+function servePrivateFile(res, filename) {
+  const filePath = normalize(join(privateDir, filename));
+  const insidePrivateDir = filePath === privateDir || filePath.startsWith(`${privateDir}${sep}`);
+  if (!insidePrivateDir || !existsSync(filePath)) {
+    res.writeHead(404, securityHeaders({ 'content-type': 'text/plain; charset=utf-8' }));
+    return res.end('Arquivo nao encontrado.');
+  }
+
+  const ext = extname(filePath);
+  res.writeHead(200, securityHeaders({
+    'content-type': mimeTypes[ext] || 'application/octet-stream',
+    'cache-control': 'no-store'
+  }));
+  createReadStream(filePath).pipe(res);
+}
+
+function sendHtml(res, status, html) {
+  res.writeHead(status, securityHeaders({ 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }));
+  res.end(html);
+}
+
+function adminLoginHtml(error = '') {
+  return `<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell admin-shell">
+      <section class="action-band admin-page">
+        <form class="dialog-panel" method="post" action="/goulindo2026soretio/login">
+          <p class="eyebrow">Area privada</p>
+          <h1 class="admin-title">Login Admin</h1>
+          <p class="notice">Digite a senha admin para abrir o painel do sorteio.</p>
+          ${error ? `<p class="notice error">${escapeHtml(error)}</p>` : ''}
+          <input name="password" type="password" autocomplete="current-password" placeholder="Senha admin" required />
+          <div class="actions">
+            <button class="button primary" type="submit">Entrar</button>
+            <a class="button ghost" href="/">Voltar</a>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
 function securityHeaders(headers = {}) {
   return {
     'x-content-type-options': 'nosniff',
     'x-frame-options': 'DENY',
     'referrer-policy': 'same-origin',
     'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+    'x-robots-tag': 'noindex, nofollow',
+    'content-security-policy': [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' https://i.imgur.com https://cdn.discordapp.com data:",
+      "connect-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'"
+    ].join('; '),
     ...headers
   };
 }

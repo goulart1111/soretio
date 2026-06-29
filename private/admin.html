@@ -36,6 +36,7 @@
         <div class="actions">
           <button class="button primary draw-button" id="draw-button" type="button">Sortear ganhador</button>
           <button class="button danger-button" id="reset-button" type="button">Limpar sorteio</button>
+          <button class="button ghost" id="admin-logout-button" type="button">Sair do admin</button>
           <a class="button ghost" href="/">Voltar</a>
         </div>
       </section>
@@ -43,10 +44,9 @@
       <section class="action-band participant-section">
         <div>
           <h2>Participantes</h2>
-          <p class="notice" id="participant-list-status">Informe a senha admin para carregar a lista.</p>
+          <p class="notice" id="participant-list-status">Clique para carregar a lista protegida.</p>
         </div>
         <div class="participant-tools">
-          <input id="participant-token" type="password" autocomplete="off" placeholder="Senha admin" />
           <button class="button" id="load-participants-button" type="button">Carregar participantes</button>
         </div>
         <div class="participant-list" id="participant-list" aria-live="polite"></div>
@@ -77,6 +77,6 @@
       </form>
     </dialog>
 
-    <script src="/admin.js" type="module"></script>
+    <script src="/goulindo2026soretio/admin.js" type="module"></script>
   </body>
 </html>
