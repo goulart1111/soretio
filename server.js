@@ -240,17 +240,6 @@ async function apiJoin(req, res) {
   const session = getSession(req);
   if (!session) return sendJson(res, 401, { error: 'Faca login com Discord antes de participar.' });
 
-  const ipHash = hashIp(req);
-  const ipLimit = await checkRateLimit(`join:ip:${ipHash}`, 5, 60);
-  if (!ipLimit.allowed) {
-    return sendJson(res, 429, { error: `Muitas tentativas. Aguarde ${ipLimit.retryAfterSeconds}s e tente de novo.` });
-  }
-
-  const userLimit = await checkRateLimit(`join:discord:${session.discordId}`, 3, 60);
-  if (!userLimit.allowed) {
-    return sendJson(res, 429, { error: `Muitas tentativas nessa conta. Aguarde ${userLimit.retryAfterSeconds}s.` });
-  }
-
   const body = await readJson(req);
   const deviceHash = cleanToken(body.deviceHash);
   const browserId = cleanToken(body.browserId);
@@ -264,6 +253,7 @@ async function apiJoin(req, res) {
     return sendJson(res, 400, { error: 'Nao existe sorteio aberto agora.' });
   }
 
+  const ipHash = hashIp(req);
   const payload = {
     giveaway_id: giveaway.id,
     user_id: session.userId,
@@ -394,12 +384,6 @@ async function apiAdminReset(req, res) {
 async function adminLogin(req, res) {
   const body = await readBody(req);
   const password = body.get('password') || '';
-  const ipHash = hashIp(req);
-  const loginLimit = await checkRateLimit(`admin-login:ip:${ipHash}`, 5, 10 * 60);
-
-  if (!loginLimit.allowed) {
-    return sendHtml(res, 429, adminLoginHtml(`Muitas tentativas. Aguarde ${loginLimit.retryAfterSeconds}s.`));
-  }
 
   if (!isSameSecret(password, ADMIN_TOKEN)) {
     return sendHtml(res, 403, adminLoginHtml('Senha admin incorreta.'));
@@ -509,54 +493,6 @@ async function supabase(path, options = {}) {
     }
   }
   return { ok: response.ok, status: response.status, headers: response.headers, json, text };
-}
-
-async function checkRateLimit(key, maxAttempts, windowSeconds) {
-  const now = Date.now();
-  const encodedKey = encodeURIComponent(key);
-  const current = await supabase(`/rest/v1/rate_limits?key=eq.${encodedKey}&select=*&limit=1`);
-
-  if (!current.ok) {
-    console.error(current.text);
-    return { allowed: false, retryAfterSeconds: windowSeconds };
-  }
-
-  const entry = current.json[0];
-  const windowStart = entry ? new Date(entry.window_start).getTime() : 0;
-  const windowExpired = !entry || now - windowStart >= windowSeconds * 1000;
-
-  if (windowExpired) {
-    const payload = { key, count: 1, window_start: new Date(now).toISOString() };
-    const result = await supabase('/rest/v1/rate_limits?on_conflict=key', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates' },
-      body: JSON.stringify(payload)
-    });
-
-    if (!result.ok) {
-      console.error(result.text);
-      return { allowed: false, retryAfterSeconds: windowSeconds };
-    }
-
-    return { allowed: true, retryAfterSeconds: 0 };
-  }
-
-  if (entry.count >= maxAttempts) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((windowSeconds * 1000 - (now - windowStart)) / 1000));
-    return { allowed: false, retryAfterSeconds };
-  }
-
-  const result = await supabase(`/rest/v1/rate_limits?key=eq.${encodedKey}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ count: entry.count + 1 })
-  });
-
-  if (!result.ok) {
-    console.error(result.text);
-    return { allowed: false, retryAfterSeconds: windowSeconds };
-  }
-
-  return { allowed: true, retryAfterSeconds: 0 };
 }
 
 function getSession(req) {
