@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sorteio PIX</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Sorteio com verificacao Discord</p>
+          <h1 id="page-title">Sorteio PIX</h1>
+          <p class="subtitle">Entre com sua conta do Discord, confirme sua participacao uma unica vez e acompanhe o resultado.</p>
+        </div>
+
+        <div class="status-panel" aria-live="polite">
+          <div class="user-row">
+            <div class="avatar" id="avatar">?</div>
+            <div>
+              <span class="muted">Conta</span>
+              <strong id="user-name">Nao conectado</strong>
+            </div>
+          </div>
+          <div class="metric-grid">
+            <div>
+              <span class="muted">Participantes</span>
+              <strong id="participant-count">0</strong>
+            </div>
+            <div>
+              <span class="muted">Status</span>
+              <strong id="giveaway-status">Carregando</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="action-band">
+        <div>
+          <h2 id="giveaway-title">Sorteio PIX</h2>
+          <p id="giveaway-prize">Premio em PIX</p>
+          <p class="notice" id="notice">Carregando dados do sorteio...</p>
+        </div>
+        <div class="actions">
+          <a class="button primary" id="login-button" href="/auth/discord">Entrar com Discord</a>
+          <button class="button primary" id="join-button" type="button" hidden>Participar</button>
+          <button class="button ghost" id="logout-button" type="button" hidden>Sair</button>
+        </div>
+      </section>
+
+      <section class="admin-band">
+        <details>
+          <summary>Area admin</summary>
+          <div class="admin-controls">
+            <input id="admin-token" type="password" autocomplete="off" placeholder="Token admin" />
+            <button class="button" id="draw-button" type="button">Sortear ganhador</button>
+          </div>
+          <p class="notice" id="admin-result"></p>
+        </details>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
